@@ -1,0 +1,13 @@
+{
+  "id": "nartag",
+  "name": "Nartag",
+  "version": "1.0.0",
+  "manifestURI": "https://raw.githubusercontent.com/branrgx/seanime-extensions/main/src/Nartag/manifest.json",
+  "language": "typescript",
+  "type": "manga-provider",
+  "description": "A Seanime extension that brings Spanish-language manga, manhwa, and manhua through Nartag.",
+  "author": "branrgx",
+  "icon": "https://raw.githubusercontent.com/branrgx/seanime-extensions/main/src/Nartag/icon.png",
+  "lang": "es",
+  "payloadURI": "https://raw.githubusercontent.com/branrgx/seanime-extensions/main/src/Nartag/main.ts"
+}
