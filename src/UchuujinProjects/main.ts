@@ -44,6 +44,7 @@ class Provider {
 
   async findChapters(mangaId: string): Promise<ChapterDetails[]> {
     const res = await fetch(`${this.webUrl}${mangaId}`);
+
     if (!res.ok) return [];
 
     const html = await res.text();
@@ -64,7 +65,7 @@ class Provider {
       });
     }
 
-    return chapters;
+    return chapters.reverse();
   }
 
   async findChapterPages(chapterId: string): Promise<ChapterPage[]> {
