@@ -11,7 +11,7 @@ interface SerieItemList {
 interface ResponseChapterItem {
   name: string;
   id: number;
-  team: { id: number; name: "Olympus" };
+  team: { id: number; name: "Olympus" } | null;
   published_at: string;
 }
 
@@ -82,7 +82,7 @@ class Provider {
       title: `Capítulo ${item.name}`,
       chapter: item.name,
       index: parseInt(item.name) ?? 0,
-      scanlator: item.team.name,
+      scanlator: item.team?.name ?? "Olympus",
       updatedAt: item.published_at,
     }));
   }
