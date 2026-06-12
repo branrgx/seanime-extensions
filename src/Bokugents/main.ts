@@ -136,7 +136,7 @@ class Provider {
       const res = await data.json();
       const html = res.solution.response;
 
-      const $ = cheerio.load(html);
+      const $ = LoadDoc(html);
 
       const json = $("body").text();
 
