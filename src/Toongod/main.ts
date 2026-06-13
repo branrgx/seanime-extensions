@@ -71,7 +71,7 @@ class Provider {
     const chapters: ChapterDetails[] = [];
 
     $("li.wp-manga-chapter").each((i, e) => {
-      const url = e.children("a").attr("href");
+      const url = e.children("a").attr("href")?.trim() ?? "";
       const id = url.split(this.baseUrl)[1];
       const title = e.children("a").text().trim();
       const titleParts = title.match(/Chapter\s+([\d.]+)(?:\s+(.+))?/i) ?? [];
