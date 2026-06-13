@@ -25,7 +25,7 @@ class Provider {
 
     if (!res.ok) return [];
 
-    const html = res.text();
+    const html = await res.text();
 
     const $ = LoadDoc(html);
 
@@ -70,7 +70,7 @@ class Provider {
     const res = await this.safeFetch(`${this.baseUrl}${mangaId}`);
     if (!res.ok) return [];
 
-    const html = res.text();
+    const html = await res.text();
 
     const $ = LoadDoc(html);
 
@@ -100,7 +100,7 @@ class Provider {
     const res = await this.safeFetch(`${this.baseUrl}${chapterId}`);
     if (!res.ok) return [];
 
-    const html = res.text();
+    const html = await res.text();
 
     const $ = LoadDoc(html);
 
@@ -109,7 +109,7 @@ class Provider {
     $(".reading-content")
       .children(".page-break")
       .each((i, e) => {
-        const url = e.children("img").attr("data-src").trim();
+        const url = e.children("img").attr("data-src")?.trim() ?? "";
 
         pages.push({
           index: i + 1,
@@ -157,7 +157,7 @@ class Provider {
 
   private async safeFetch(
     input: string | URL | Request,
-    init?: RequestInit | undefined = { headers: {} },
+    init: RequestInit | undefined = { headers: {} },
   ): Promise<Response> {
     if (this.stringToBool(this.useProxyBypass)) {
       await this.getValidSessionHeaders();
