@@ -65,7 +65,7 @@ class Provider {
     const chapters: ChapterDetails[] = [];
 
     $("li.wp-manga-chapter").each((i, e) => {
-      const url = e.children("a").attr("href");
+      const url = e.children("a").attr("href")?.trim() ?? "";
       const id = url.split(this.baseUrl)[1];
       const title = e.children("a").text().trim();
       const titleParts =
@@ -96,35 +96,36 @@ class Provider {
 
     $("img.rk-img.h-auto").each((i, e) => {
       pages.push({
-        url: e.attr("src"),
+        url: e.attr("src")?.trim() ?? "",
         index: i + 1,
+        headers: {},
       });
     });
 
     return pages;
   }
 
-  async getReadingPageHtml(chapterId: string): string | null {
+  async getReadingPageHtml(chapterId: string): Promise<string | null> {
     const chapterUrl = `${this.baseUrl}${chapterId}`;
     const resRedirect = await fetch(chapterUrl, {
       headers: { Referer: `${this.baseUrl}/` },
     });
 
-    if (!resRedirect.ok) return [];
+    if (!resRedirect.ok) return null;
 
     const formHtml = await resRedirect.text();
 
     const $ = LoadDoc(formHtml);
     const data = {
-      actionUrl: $("form#rk_madara_redirect").attr("action"),
-      rt: $("input[name=rt]").attr("value"),
-      chapter_id: $("input[name=chapter_id]").attr("value"),
-      manga_id: $("input[name=manga_id]").attr("value"),
+      actionUrl: $("form#rk_madara_redirect").attr("action")?.trim() ?? "",
+      rt: $("input[name=rt]").attr("value")?.trim() ?? "",
+      chapter_id: $("input[name=chapter_id]").attr("value")?.trim() ?? "",
+      manga_id: $("input[name=manga_id]").attr("value")?.trim() ?? "",
     };
 
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
-      formData.set(key, value.toString());
+      formData.set(key, value?.toString());
     });
 
     const res = await fetch(data.actionUrl, {
