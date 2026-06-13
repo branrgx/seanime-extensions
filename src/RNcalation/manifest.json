@@ -1,7 +1,7 @@
 {
   "id": "rncanlation",
   "name": "RNcanlation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "manifestURI": "https://raw.githubusercontent.com/branrgx/seanime-extensions/master/src/RNcalation/manifest.json",
   "language": "typescript",
   "type": "manga-provider",
