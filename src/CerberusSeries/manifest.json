@@ -1,7 +1,7 @@
 {
   "id": "cerberus-series",
   "name": "Cerberus Series (LegionScans)",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "manifestURI": "https://raw.githubusercontent.com/branrgx/seanime-extensions/main/src/CerberusSeries/manifest.json",
   "language": "typescript",
   "type": "manga-provider",
