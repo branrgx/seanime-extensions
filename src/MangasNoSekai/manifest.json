@@ -1,0 +1,31 @@
+{
+  "id": "mangasnosekai",
+  "name": "MangasNoSekai",
+  "version": "1.0.0",
+  "manifestURI": "https://raw.githubusercontent.com/branrgx/seanime-extensions/master/src/MangasNoSekai/manifest.json",
+  "language": "typescript",
+  "type": "manga-provider",
+  "description": "An extension for Seanime for MangasNoSekai, a Spanish scanlation platform focused primarily on manga, also offering manhwa and manhua from multiple scanlation groups.",
+  "author": "branrgx",
+  "icon": "https://raw.githubusercontent.com/branrgx/seanime-extensions/master/src/MangasNoSekai/icon.png",
+  "lang": "es",
+  "payloadURI": "https://raw.githubusercontent.com/branrgx/seanime-extensions/master/src/MangasNoSekai/main.ts",
+  "userConfig": {
+    "requiresConfig": false,
+    "version": 1,
+    "fields": [
+      {
+        "name": "useProxyBypassMangasNoSekai",
+        "label": "Use proxy cloudflare bypass",
+        "type": "switch",
+        "default": "true"
+      },
+      {
+        "name": "proxyBypassUrlMangasNoSekai",
+        "label": "FlareSolverr Proxy URL",
+        "type": "text",
+        "default": "http://127.0.0.1:8191"
+      }
+    ]
+  }
+}
