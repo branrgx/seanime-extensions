@@ -13,6 +13,8 @@ class Provider {
   private useProxyBypass = "{{useProxyBypass}}";
   private proxyBypassUrl = "{{proxyBypassUrl}}";
   private webUrl = "https://bokugents.com";
+  private cookies = "";
+  private userAgent = "";
 
   getSettings(): Settings {
     return {
@@ -34,7 +36,13 @@ class Provider {
     return series.map((item) => ({
       id: item.post_link.split(this.webUrl)[1],
       title: item.post_title,
-      image: item.post_image,
+      image: new URL(
+        `${item.post_image}&headers=${JSON.stringify({
+          Referer: `${this.webUrl}`,
+          "User-Agent": this.userAgent,
+          Cookie: this.cookies,
+        })}`,
+      ).href,
     }));
   }
 
@@ -67,7 +75,6 @@ class Provider {
         });
       });
 
-    let number = 0;
     return chapters.reverse().map((e, i) => {
       return {
         ...e,
@@ -93,6 +100,8 @@ class Provider {
         url: new URL(url).href,
         headers: {
           Referer: `${this.webUrl}${chapterId}`,
+          "User-Agent": this.userAgent,
+          Cookie: this.cookies,
         },
       }));
     } catch (error) {
@@ -136,6 +145,12 @@ class Provider {
       const res = await data.json();
       const html = res.solution.response;
 
+      this.cookies = res.solution.cookies
+        .map((c: any) => `${c.name}=${c.value}`)
+        .join("; ");
+
+      this.userAgent = res.solution.userAgent;
+
       const $ = LoadDoc(html);
 
       const json = $("body").text();
@@ -162,6 +177,13 @@ class Provider {
         }),
       );
       const data = await series.json();
+
+      this.cookies = data.solution.cookies
+        .map((c: any) => `${c.name}=${c.value}`)
+        .join("; ");
+
+      this.userAgent = data.solution.userAgent;
+
       return data.solution.response;
     } catch {
       return null;
