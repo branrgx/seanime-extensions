@@ -20,11 +20,41 @@ class Provider {
 
     const json = await res.json();
 
-    return json.map((item: any) => ({
-      id: item.link,
-      title: item.label,
-      image: this.baseUrl + item.thumbnail,
-    }));
+    const series = [];
+
+    if (json.length <= 6) {
+      for (const serie of json) {
+        const s = await fetch(`${this.baseUrl}${serie.link}`, {
+          headers: { Referer: `${this.baseUrl}/` },
+        });
+        if (!s.ok) {
+          continue;
+        }
+
+        const html = s.text();
+        const altTitles = html
+          .match(/<span>Títulos Alternativos: <\/span>(.*?)<br>/s)?.[1]
+          .split(", ")
+          .map((t) => t.trim());
+
+        series.push({
+          id: serie.link,
+          title: serie.label,
+          image: this.baseUrl + serie.thumbnail,
+          synonyms: altTitles,
+        });
+      }
+    } else {
+      for (const serie of json) {
+        series.push({
+          id: serie.link,
+          title: serie.label,
+          image: this.baseUrl + serie.thumbnail,
+        });
+      }
+    }
+
+    return series;
   }
 
   async findChapters(mangaId: string): Promise<ChapterDetails[]> {
