@@ -1,7 +1,7 @@
 {
   "id": "mangas-in",
   "name": "Mangas.in",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "manifestURI": "https://raw.githubusercontent.com/branrgx/seanime-extensions/master/src/MangasIn/manifest.json",
   "language": "typescript",
   "type": "manga-provider",
