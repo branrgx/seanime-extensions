@@ -1,5 +1,37 @@
 /// <reference path="../manga-provider.d.ts" />
 
+interface Serie {
+  id: number;
+  name: string;
+  summary: string;
+  slug: string;
+  created_at: string;
+  cover: string;
+  first_chapter: {
+    id: number;
+    name: string;
+  };
+}
+
+interface Chapter {
+  chapter: {
+    id: number;
+    name: string;
+    title: string | null;
+    published_at: string;
+    pages: string[];
+    team: {
+      id: number;
+      name: string;
+    };
+  };
+  comic: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+}
+
 interface SerieItemList {
   id: number;
   name: string;
@@ -8,15 +40,13 @@ interface SerieItemList {
   type: "comic" | "novel";
 }
 
-interface ResponseChapterItem {
-  name: string;
-  id: number;
-  team: { id: number; name: "Olympus" } | null;
-  published_at: string;
-}
-
-interface ResponseChapterList {
-  data: ResponseChapterItem[];
+interface ChaptersList {
+  data: {
+    name: string;
+    id: number;
+    team: { id: number; name: "Olympus" } | null;
+    published_at: string;
+  }[];
   meta: {
     current_page: number;
     last_page: number;
@@ -25,6 +55,8 @@ interface ResponseChapterList {
 
 class Provider {
   private webUrl = "{{webUrl}}";
+  private baseUrl = "";
+  private apiBaseUrl = "";
 
   getSettings(): Settings {
     return {
@@ -45,102 +77,162 @@ class Provider {
     return url;
   }
 
-  private getApiUrl() {
-    let url = this.webUrl || "https://dashboard.olympusbiblioteca.com";
-    return this.formatUrl(url, "https", "dashboard");
-  }
-
-  private getWebUrl() {
-    let url = this.webUrl || "https://olympusbiblioteca.com";
-    return this.formatUrl(url, "https");
+  private loadUrls() {
+    // load web url
+    let webUrl = this.webUrl || "https://olympusbiblioteca.com";
+    this.baseUrl = this.formatUrl(webUrl, "https");
+    // load api url
+    let apiUrl = this.webUrl || "https://dashboard.olympusbiblioteca.com";
+    this.apiBaseUrl = this.formatUrl(apiUrl, "https", "dashboard");
   }
 
   async search(opts: QueryOptions): Promise<SearchResult[]> {
-    const url = this.getWebUrl();
-    const res = await fetch(`${url}/api/series/list`);
+    this.loadUrls();
+    const list = await this.getSeriesList();
 
-    if (!res.ok) return [];
+    const ids = list
+      .filter(
+        (item) =>
+          item.name.toLowerCase().includes(opts.query.toLowerCase()) &&
+          item.type === "comic",
+      )
+      .map((i) => i.slug);
 
-    const data: { data: SerieItemList[] } = await res.json();
+    const series: SearchResult[] = [];
 
-    const series = data.data.filter(
-      (item) =>
-        item.name.toLowerCase().includes(opts.query.toLowerCase()) &&
-        item.type === "comic",
-    );
+    for (const id of ids) {
+      const serie = await this.getSearchSerie(id);
+      if (!serie) continue;
 
-    return series.map((item) => ({
-      id: item.slug,
-      title: item.name,
-      image: item.cover,
-    }));
+      series.push(serie);
+    }
+
+    return series;
   }
 
   async findChapters(mangaId: string): Promise<ChapterDetails[]> {
-    const url = this.getApiUrl();
-    const webUrl = this.getWebUrl();
-    const request = (page: number) =>
-      fetch(
-        `${url}/api/series/${mangaId}/chapters?type=comic&page=${page}&direction=desc`,
-      );
-    const res = await request(1);
-    if (!res.ok) return [];
-
-    const dataFirstPage: ResponseChapterList = await res.json();
-
-    const listChapters: ResponseChapterItem[] = dataFirstPage.data;
-    const countPages = dataFirstPage.meta.last_page;
+    this.loadUrls();
+    const firstPage = await this.getChapterList(mangaId, 1);
+    const listChapters = firstPage.data;
+    const countPages = firstPage.meta.last_page;
 
     for (let i = 2; i <= countPages; i++) {
-      const resPage = await request(i);
-      if (!resPage.ok) break;
-
-      const jsonPage: ResponseChapterList = await resPage.json();
-      listChapters.push(...jsonPage.data);
+      const page = await this.getChapterList(mangaId, i);
+      if (page.data.length <= 0) break;
+      listChapters.push(...page.data);
     }
 
     return listChapters
       .map((item) => ({
         id: `${item.id}/comic-${mangaId}`,
-        url: `${webUrl}/capitulo/${item.id}/comic-${mangaId}`,
+        url: `${this.baseUrl}/capitulo/${item.id}/comic-${mangaId}`,
         title: `Capítulo ${item.name}`,
         chapter: item.name,
         index: parseInt(item.name) ?? 0,
-        scanlator: item.team?.name ?? "Olympus",
+        scanlator: item.team?.name.trim() ?? "Olympus",
         updatedAt: item.published_at,
       }))
       .reverse();
   }
 
   async findChapterPages(chapterId: string): Promise<ChapterPage[]> {
-    const apiUrl = this.getApiUrl();
-    const webUrl = this.getWebUrl();
-    const res = await fetch(`${webUrl}/capitulo/${chapterId}`);
+    this.loadUrls();
+    const [id, slug] = chapterId.split("/");
+    const chapter = await this.getChapter(parseInt(id), slug);
+
+    if (!chapter) return [];
+
+    return chapter.chapter.pages.map((p, i) => ({
+      url: p.trim(),
+      index: i + 1,
+      headers: { Referer: `${this.baseUrl}/capitulo/${chapterId}` },
+    }));
+  }
+
+  async getSeriesList(): Promise<SerieItemList[]> {
+    const res = await fetch(`${this.baseUrl}/api/series/list`);
 
     if (!res.ok) return [];
 
-    const html = await res.text();
+    const list: { data: SerieItemList[] } = await res.json();
 
-    const $ = LoadDoc(html);
+    return list.data;
+  }
 
-    const pages: string[] = [];
+  async getSearchSerie(id: string): Promise<SearchResult | null> {
+    const check = await this.getChapterList(id, 1);
 
-    $("div.flex.flex-col.rounded-xl.overflow-hidden.shadow-xl")
-      .children("div")
-      .each((i, e) => {
-        const img = e.find("img");
-        if (!img) return;
+    if (check.data.length > 0) {
+      const serie = await this.getSerie(id);
+      if (!serie) return null;
+      return {
+        id: serie.slug,
+        title: serie.name,
+        image: serie.cover,
+      };
+    }
 
-        const url = img.attr("src");
-        if (!url) return;
+    const realId = await this.getRealSerieId(id);
+    if (!realId) return null;
 
-        pages.push(url.trim());
-      });
+    const serie = await this.getSerie(realId);
+    if (!serie) return null;
 
-    return pages.map((e, i) => ({
-      url: e.trim(),
-      index: i + 1,
-      headers: { Referer: `${webUrl}/capitulo/${chapterId}` },
-    }));
+    return {
+      id: serie.slug,
+      title: serie.name,
+      image: serie.cover,
+    };
+  }
+
+  async getSerie(id: string): Promise<Serie | null> {
+    const req = await fetch(`${this.baseUrl}/api/series/${id}?type=comic`);
+
+    if (!req.ok) return null;
+
+    const json = await req.json();
+    return json.data;
+  }
+
+  async getRealSerieId(id: string): Promise<string | null> {
+    const serie = await this.getSerie(id);
+
+    if (!serie) return null;
+
+    const chapter = await this.getChapter(serie.first_chapter.id, id);
+
+    if (!chapter) return null;
+
+    return chapter.comic.slug;
+  }
+
+  async getChapterList(id: string, page: number): Promise<ChaptersList> {
+    const req = await fetch(
+      `${this.apiBaseUrl}/api/series/${id}/chapters?page=${page}&direction=desc&type=comic`,
+    );
+
+    if (!req.ok)
+      return {
+        data: [],
+        meta: {
+          current_page: page,
+          last_page: page,
+        },
+      };
+
+    return req.json();
+  }
+
+  async getChapter(
+    chapterId: number,
+    serieSlug: string,
+  ): Promise<Chapter | null> {
+    const chapter = await fetch(
+      `${this.baseUrl}/api/capitulo/${serieSlug}/${chapterId.toString()}?type=comic`,
+    );
+
+    if (!chapter.ok) return null;
+
+    return chapter.json();
   }
 }
