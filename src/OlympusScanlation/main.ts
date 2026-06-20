@@ -82,8 +82,8 @@ class Provider {
     let webUrl = this.webUrl || "https://olympusbiblioteca.com";
     this.baseUrl = this.formatUrl(webUrl, "https");
     // load api url
-    let apiUrl = this.webUrl || "https://dashboard.olympusbiblioteca.com";
-    this.apiBaseUrl = this.formatUrl(apiUrl, "https", "dashboard");
+    let apiUrl = this.webUrl || "https://panel.olympusbiblioteca.com";
+    this.apiBaseUrl = this.formatUrl(apiUrl, "https", "panel");
   }
 
   async search(opts: QueryOptions): Promise<SearchResult[]> {
